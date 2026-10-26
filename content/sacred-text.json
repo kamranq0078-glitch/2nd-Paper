@@ -1,0 +1,44 @@
+{
+  "charge": [
+    {
+      "key": "whoever_relies",
+      "arabic": "وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ",
+      "translation": "And whoever relies upon Allah - then He is sufficient for him.",
+      "reference": "At-Talaq 65:3"
+    },
+    {
+      "key": "burden_soul",
+      "arabic": "لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا",
+      "translation": "Allah does not charge a soul except [with that within] its capacity.",
+      "reference": "Al-Baqarah 2:286"
+    }
+  ],
+  "dadyy": {
+    "key": "dadyy",
+    "arabic": "اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ",
+    "translation": "O Allah, forgive him and have mercy on him.",
+    "reference": "Sahih Muslim 963"
+  },
+  "morning": {
+    "bismillah": {
+      "key": "bismillah",
+      "arabic": "بِسْمِ اللَّهِ",
+      "translation": "",
+      "reference": ""
+    },
+    "verses": [
+      {
+        "key": "expand_breast",
+        "arabic": "رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي",
+        "translation": "My Lord, expand for me my breast and ease for me my task",
+        "reference": "Ta-Ha 20:25–26"
+      },
+      {
+        "key": "increase_knowledge",
+        "arabic": "وَقُل رَّبِّ زِدْنِي عِلْمًا",
+        "translation": "And say, 'My Lord, increase me in knowledge.'",
+        "reference": "Ta-Ha 20:114"
+      }
+    ]
+  }
+}

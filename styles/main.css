@@ -1,0 +1,1445 @@
+/* ==========================================================================
+   "Ready." - For Ainain
+   Visual Direction: Deep indigo & near-black, warm gold light, soft ivory text.
+   Mobile-first, calm, tactile, unhurried motion.
+   ========================================================================== */
+
+:root {
+  /* Core Palette */
+  --bg-deep: #070810;
+  --bg-indigo: #0B0E1B;
+  --bg-dusk: #11162B;
+  --gold-warm: #F3C97E;
+  --gold-core: #FFE8B6;
+  --gold-deep: #C99B4B;
+  --gold-glow-soft: rgba(243, 201, 126, 0.18);
+  --gold-glow-bright: rgba(243, 201, 126, 0.45);
+  --gold-glow-intense: rgba(255, 232, 182, 0.7);
+
+  --text-ivory: #F3EFE8;
+  --text-muted: rgba(243, 239, 232, 0.65);
+  --text-faint: rgba(243, 239, 232, 0.38);
+
+  /* Kashmir Snow Palette */
+  --snow-sky-top: #0C1120;
+  --snow-sky-bottom: #1B2238;
+  --snow-field-top: #1A2236;
+  --snow-field-bottom: #2B3852;
+  --snow-dust: #E4ECF4;
+
+  /* Typography */
+  --font-latin: 'Cormorant Garamond', 'Lora', Georgia, serif;
+  --font-arabic: 'Amiri Quran', 'Scheherazade New', 'Noto Naskh Arabic', 'Traditional Arabic', serif;
+
+  /* Layout & Viewport */
+  --vh: 100vh;
+  --safe-bottom: env(safe-area-inset-bottom, 20px);
+  --safe-top: env(safe-area-inset-top, 20px);
+}
+
+/* Reset & Box Sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-deep);
+  color: var(--text-ivory);
+  font-family: var(--font-latin);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+/* Canvas Layers */
+#ambientCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ambient-vignette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(circle at 50% 50%, transparent 45%, rgba(4, 5, 8, 0.82) 100%);
+}
+
+/* Page Indicator Dots */
+.page-indicators {
+  position: fixed;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 40;
+  pointer-events: auto;
+}
+
+.page-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(243, 201, 126, 0.28);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  outline: none;
+}
+
+.page-dot:hover, .page-dot:focus-visible {
+  background: rgba(243, 201, 126, 0.6);
+  transform: scale(1.3);
+}
+
+.page-dot.active {
+  height: 20px;
+  border-radius: 4px;
+  background: var(--gold-warm);
+  box-shadow: 0 0 12px var(--gold-warm);
+}
+
+/* Stage & Scenes */
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  z-index: 3;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.scene {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(var(--safe-top) + 24px) 24px calc(var(--safe-bottom) + 20px) 24px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 0.72s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.72s ease,
+              visibility 0.72s ease;
+  transform: translate3d(0, 40px, 0);
+  will-change: transform, opacity;
+}
+
+.scene.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate3d(0, 0, 0);
+  z-index: 10;
+}
+
+.scene.exit-up {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate3d(0, -100%, 0);
+  z-index: 5;
+}
+
+.scene.exit-down {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate3d(0, 100%, 0);
+  z-index: 5;
+}
+
+.scene.enter-down {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate3d(0, 100%, 0);
+  z-index: 8;
+}
+
+.scene.enter-up {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate3d(0, -100%, 0);
+  z-index: 8;
+}
+
+.scene-content {
+  width: 100%;
+  max-width: 520px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* Universal Continue Handle */
+.scene-handle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 28px;
+  margin-bottom: var(--safe-bottom);
+  color: var(--gold-warm);
+  opacity: 0.72;
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  z-index: 10;
+}
+
+.scene-handle:hover, .scene-handle:focus-visible {
+  opacity: 1;
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.handle-glow {
+  width: 32px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold-warm), transparent);
+  box-shadow: 0 0 12px var(--gold-warm);
+  margin-bottom: 6px;
+  animation: handlePulse 3.8s ease-in-out infinite;
+}
+
+.handle-arrow {
+  width: 18px;
+  height: 18px;
+  stroke: var(--gold-warm);
+  opacity: 0.85;
+  animation: handleBob 3.8s ease-in-out infinite;
+}
+
+@keyframes handlePulse {
+  0%, 100% { opacity: 0.35; transform: scaleX(0.85); }
+  50% { opacity: 0.95; transform: scaleX(1.15); box-shadow: 0 0 16px var(--gold-warm); }
+}
+
+@keyframes handleBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Universal Arabic & Translation Lines */
+.arabic-line {
+  font-family: var(--font-arabic);
+  font-size: 1.55rem;
+  line-height: 2.3;
+  color: var(--gold-core);
+  text-align: center;
+  text-shadow: 0 0 18px rgba(243, 201, 126, 0.4);
+  letter-spacing: 0.02em;
+  direction: rtl;
+  margin-bottom: 8px;
+  word-spacing: 0.1em;
+}
+
+.translation-line {
+  font-family: var(--font-latin);
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  text-align: center;
+  letter-spacing: 0.03em;
+  font-style: italic;
+  max-width: 38ch;
+  margin: 0 auto;
+}
+
+/* ==============================================
+   SCENE 0: THRESHOLD
+   ============================================== */
+.threshold-content {
+  gap: 42px;
+}
+
+.pulse-ring-wrapper {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pulse-ring {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pulse-ring-outer {
+  width: 130px;
+  height: 130px;
+  border: 1px solid rgba(243, 201, 126, 0.15);
+  box-shadow: 0 0 45px rgba(243, 201, 126, 0.18), inset 0 0 25px rgba(243, 201, 126, 0.12);
+  animation: heartbeatOuter 4.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.pulse-ring-middle {
+  width: 86px;
+  height: 86px;
+  border: 1.5px solid rgba(243, 201, 126, 0.4);
+  box-shadow: 0 0 25px rgba(243, 201, 126, 0.28);
+  animation: heartbeatMid 4.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.pulse-ring-core {
+  width: 22px;
+  height: 22px;
+  background: radial-gradient(circle, #FFF7E6 0%, var(--gold-warm) 65%, transparent 100%);
+  box-shadow: 0 0 24px var(--gold-warm);
+  animation: heartbeatCore 4.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes heartbeatOuter {
+  0%, 100% { transform: scale(0.92); opacity: 0.25; }
+  35% { transform: scale(1.08); opacity: 0.65; }
+  48% { transform: scale(1.02); opacity: 0.45; }
+  60% { transform: scale(1.06); opacity: 0.58; }
+  75% { transform: scale(0.94); opacity: 0.3; }
+}
+
+@keyframes heartbeatMid {
+  0%, 100% { transform: scale(0.94); opacity: 0.4; }
+  35% { transform: scale(1.06); opacity: 0.85; }
+  48% { transform: scale(1.01); opacity: 0.6; }
+  60% { transform: scale(1.04); opacity: 0.75; }
+  75% { transform: scale(0.96); opacity: 0.45; }
+}
+
+@keyframes heartbeatCore {
+  0%, 100% { transform: scale(0.9); opacity: 0.6; }
+  35% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 32px var(--gold-core); }
+  48% { transform: scale(1.05); opacity: 0.75; }
+  60% { transform: scale(1.15); opacity: 0.95; }
+  75% { transform: scale(0.95); opacity: 0.65; }
+}
+
+.subject-name {
+  font-family: var(--font-latin);
+  font-weight: 400;
+  font-size: 2.85rem;
+  letter-spacing: 0.12em;
+  color: var(--text-ivory);
+  opacity: 0;
+  transform: translateY(12px);
+  animation: nameFadeIn 2.6s cubic-bezier(0.25, 1, 0.5, 1) 1.2s forwards;
+  text-shadow: 0 2px 24px rgba(243, 201, 126, 0.28);
+}
+
+@keyframes nameFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==============================================
+   SCENE 1: THE ROAD HERE (Snowfield & Footprints)
+   ============================================== */
+.road-content {
+  width: 100%;
+  max-width: 600px;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Mountains in Dusk */
+.mountain-horizon {
+  position: absolute;
+  top: 15%;
+  left: -5%;
+  width: 110%;
+  height: 240px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.85;
+}
+
+.mountain-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Snowfield Interactive Container */
+.snowfield {
+  position: relative;
+  width: 100%;
+  height: 82%;
+  z-index: 2;
+  cursor: grab;
+  touch-action: pan-y;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.footprints-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.footprint {
+  position: absolute;
+  width: 26px;
+  height: 48px;
+  transform-origin: center center;
+  opacity: 0;
+  transition: opacity 0.85s cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.footprint.visible {
+  opacity: 0.92;
+}
+
+.footprint svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 10px rgba(243, 201, 126, 0.55));
+}
+
+.footprint .print-indent {
+  fill: #1A2133;
+}
+
+.footprint .print-glow {
+  fill: var(--gold-warm);
+  opacity: 0.75;
+}
+
+/* Subtle Path Guide */
+.trail-guide {
+  position: absolute;
+  bottom: 0;
+  width: 1px;
+  height: 90%;
+  background: linear-gradient(180deg, transparent, rgba(243, 201, 126, 0.12) 30%, rgba(243, 201, 126, 0.28) 80%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Light for Dadyy (Unlabelled Lantern) */
+.dadyy-lantern {
+  position: absolute;
+  right: 18px;
+  top: 42%;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  outline: none;
+  touch-action: manipulation;
+}
+
+.lantern-halo {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(243, 201, 126, 0.35) 0%, rgba(243, 201, 126, 0.08) 60%, transparent 100%);
+  box-shadow: 0 0 18px rgba(243, 201, 126, 0.4);
+  animation: lanternBreathe 5s ease-in-out infinite;
+}
+
+.lantern-core {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #FFF5DD;
+  box-shadow: 0 0 12px var(--gold-warm);
+}
+
+@keyframes lanternBreathe {
+  0%, 100% { transform: scale(0.9); opacity: 0.5; }
+  50% { transform: scale(1.22); opacity: 0.95; }
+}
+
+/* Dadyy Dua Floating Reveal */
+.dadyy-dua-overlay {
+  position: absolute;
+  top: 28%;
+  left: 50%;
+  transform: translate(-50%, -20px);
+  width: 90%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 1.2s ease, transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 1.2s ease;
+  z-index: 8;
+}
+
+.dadyy-dua-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+.floating-ember {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFF 0%, var(--gold-warm) 60%, transparent 100%);
+  box-shadow: 0 0 20px var(--gold-core);
+  margin-bottom: 16px;
+  animation: emberAscend 4.5s ease-out infinite;
+}
+
+@keyframes emberAscend {
+  0% { transform: translateY(12px) scale(0.8); opacity: 0.4; }
+  50% { transform: translateY(-8px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(-26px) scale(0.6); opacity: 0; }
+}
+
+.dadyy-text-card {
+  background: rgba(11, 14, 27, 0.88);
+  border: 1px solid rgba(243, 201, 126, 0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(243, 201, 126, 0.15);
+}
+
+.dadyy-arabic {
+  font-size: 1.35rem;
+  line-height: 2.1;
+  margin-bottom: 4px;
+}
+
+.dadyy-translation {
+  font-size: 0.88rem;
+}
+
+/* ==============================================
+   SCENE 2: STEADY HANDS (Thread & Magnetism)
+   ============================================== */
+.thread-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.thread-arena {
+  width: 100%;
+  height: 70%;
+  max-width: 500px;
+  max-height: 440px;
+  position: relative;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.thread-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.guide-path {
+  stroke: rgba(243, 201, 126, 0.16);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 6 8;
+}
+
+.traced-path {
+  stroke: var(--gold-warm);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.3s ease;
+}
+
+.thread-bead {
+  pointer-events: none;
+  transition: transform 0.04s linear;
+}
+
+.bead-halo {
+  fill: var(--gold-glow-soft);
+  animation: beadPulse 2s ease-in-out infinite;
+}
+
+.bead-core {
+  fill: #FFFDF8;
+  filter: drop-shadow(0 0 8px var(--gold-warm));
+}
+
+@keyframes beadPulse {
+  0%, 100% { r: 16; opacity: 0.4; }
+  50% { r: 24; opacity: 0.85; }
+}
+
+.end-target {
+  pointer-events: none;
+}
+
+.target-ring {
+  fill: none;
+  stroke: var(--gold-warm);
+  stroke-width: 1.2;
+  opacity: 0.4;
+  animation: targetBreath 3s ease-in-out infinite;
+}
+
+.target-dot {
+  fill: var(--gold-warm);
+  opacity: 0.7;
+}
+
+@keyframes targetBreath {
+  0%, 100% { transform: scale(0.9); opacity: 0.3; }
+  50% { transform: scale(1.15); opacity: 0.7; }
+}
+
+.knot-bloom {
+  pointer-events: none;
+  opacity: 0;
+  transition: r 0.85s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.85s ease;
+}
+
+.knot-bloom.blooming {
+  r: 90;
+  opacity: 1;
+}
+
+.calm-word {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-latin);
+  font-size: 2.4rem;
+  letter-spacing: 0.14em;
+  color: var(--text-ivory);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.5s cubic-bezier(0.2, 0.8, 0.2, 1), transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  text-shadow: 0 0 28px rgba(243, 201, 126, 0.5);
+  z-index: 10;
+}
+
+.calm-word.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.04);
+}
+
+/* ==============================================
+   SCENE 3: CHARGE (Hold Ring & Breathing Aura)
+   ============================================== */
+.charge-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.charge-aura {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(243, 201, 126, 0.22) 0%, rgba(243, 201, 126, 0.04) 65%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+  transform: scale(0.85);
+  opacity: 0.35;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.charge-aura.breathing {
+  animation: auraBreath 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes auraBreath {
+  0%, 100% { transform: scale(0.9); opacity: 0.4; }
+  40% { transform: scale(1.35); opacity: 0.75; } /* ~4s in */
+  100% { transform: scale(0.9); opacity: 0.4; } /* ~6s out */
+}
+
+.charge-ayat-container {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.charge-ayah {
+  width: 100%;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 1.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 1.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.charge-ayah.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ring-stage {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.charge-bloom-wave {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: 2px solid var(--gold-core);
+  box-shadow: 0 0 50px var(--gold-warm);
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.2s ease;
+}
+
+.charge-bloom-wave.blooming {
+  opacity: 0.95;
+  transform: scale(2.2);
+}
+
+.charge-ring-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  outline: none;
+}
+
+.ring-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+
+.ring-track {
+  fill: none;
+  stroke: rgba(243, 201, 126, 0.16);
+  stroke-width: 4;
+}
+
+.ring-progress {
+  fill: none;
+  stroke: var(--gold-warm);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 754;
+  stroke-dashoffset: 754;
+  transition: stroke-dashoffset 0.05s linear;
+}
+
+.ring-inner-core {
+  fill: rgba(243, 201, 126, 0.25);
+  transition: r 0.3s ease, fill 0.3s ease;
+}
+
+.ready-word {
+  position: absolute;
+  font-family: var(--font-latin);
+  font-size: 2.25rem;
+  letter-spacing: 0.12em;
+  color: var(--gold-core);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform: scale(0.92);
+  text-shadow: 0 0 28px var(--gold-warm);
+}
+
+.ready-word.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ==============================================
+   SCENE 4: PROUD (Polaroids & Gentle Sway)
+   ============================================== */
+.proud-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.wire-suspension {
+  position: absolute;
+  top: 6%;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.wire-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.polaroid-gallery {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px 10px;
+}
+
+.polaroid-item {
+  position: relative;
+  cursor: pointer;
+  transform-origin: top center;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), z-index 0.6s step-end;
+  outline: none;
+}
+
+.polaroid-item:nth-child(1) { animation: polaroidSway1 6.8s ease-in-out infinite alternate; }
+.polaroid-item:nth-child(2) { animation: polaroidSway2 7.4s ease-in-out infinite alternate 0.6s; }
+.polaroid-item:nth-child(3) { animation: polaroidSway1 6.4s ease-in-out infinite alternate 1.2s; }
+.polaroid-item:nth-child(4) { animation: polaroidSway2 7.0s ease-in-out infinite alternate 1.8s; }
+
+@keyframes polaroidSway1 {
+  0% { transform: rotate(-2deg); }
+  100% { transform: rotate(2.4deg); }
+}
+
+@keyframes polaroidSway2 {
+  0% { transform: rotate(2.2deg); }
+  100% { transform: rotate(-1.8deg); }
+}
+
+.pin-star {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FFFDF8;
+  box-shadow: 0 0 12px var(--gold-warm);
+  z-index: 5;
+  transition: box-shadow 0.4s ease, transform 0.4s ease;
+}
+
+.polaroid-frame {
+  background: #FFFFFF;
+  padding: 8px 8px 24px 8px;
+  border-radius: 3px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 20px rgba(243, 201, 126, 0.08);
+  width: 130px;
+  height: 175px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.polaroid-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+}
+
+/* Expanded Lightbox Focus on Tap */
+.polaroid-item.expanded {
+  z-index: 50;
+  animation: none !important;
+  transform: scale(2.05) translateY(24px) !important;
+}
+
+.polaroid-item.expanded .polaroid-frame {
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(243, 201, 126, 0.35);
+}
+
+.polaroid-item.expanded .pin-star {
+  transform: translateX(-50%) scale(1.6);
+  box-shadow: 0 0 22px var(--gold-core);
+}
+
+/* ==============================================
+   SCENE 5: TONIGHT (Rituals, Sleep, Morning Card)
+   ============================================== */
+.tonight-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.sky-stars {
+  position: absolute;
+  top: 10%;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  pointer-events: none;
+}
+
+.sky-star-point {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #FFFDF8;
+  box-shadow: 0 0 12px var(--gold-warm);
+  opacity: 0;
+  transform: scale(0.2);
+  transition: opacity 1.2s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: starTwinkle 3.2s ease-in-out infinite alternate;
+}
+
+.sky-star-point.active {
+  opacity: 0.95;
+  transform: scale(1);
+}
+
+@keyframes starTwinkle {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 16px var(--gold-core); }
+}
+
+.rituals-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  z-index: 5;
+}
+
+.ritual-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  outline: none;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ritual-btn:hover, .ritual-btn:focus-visible {
+  transform: translateY(-3px) scale(1.06);
+}
+
+.ritual-icon-box {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: rgba(17, 22, 43, 0.65);
+  border: 1px solid rgba(243, 201, 126, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 0 12px rgba(243, 201, 126, 0.05);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
+  position: relative;
+}
+
+.ritual-btn.completed .ritual-icon-box {
+  border-color: rgba(243, 201, 126, 0.7);
+  box-shadow: 0 6px 24px rgba(243, 201, 126, 0.25), inset 0 0 16px rgba(243, 201, 126, 0.15);
+  background: rgba(27, 34, 62, 0.75);
+}
+
+.ritual-svg {
+  width: 44px;
+  height: 44px;
+}
+
+/* Glass Details */
+.glass-outline {
+  fill: none;
+  stroke: var(--gold-warm);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.75;
+}
+
+.water-fill {
+  transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-box.filled .water-fill {
+  y: 22;
+}
+
+.glass-box.filled .water-wave {
+  animation: waveMotion 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes waveMotion {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-2px); }
+}
+
+/* Bag Details */
+.bag-body, .bag-handle {
+  fill: none;
+  stroke: var(--gold-warm);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.75;
+}
+
+.zipper-track {
+  stroke: rgba(243, 201, 126, 0.35);
+  stroke-width: 2;
+  stroke-dasharray: 2 3;
+}
+
+.zipper-pull {
+  fill: var(--gold-core);
+  transition: cx 0.75s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.bag-box.zipped .zipper-pull {
+  cx: 44;
+}
+
+.bag-box.zipped .bag-body {
+  stroke: var(--gold-core);
+  filter: drop-shadow(0 0 6px var(--gold-warm));
+}
+
+/* Clock Details */
+.clock-rim {
+  fill: none;
+  stroke: var(--gold-warm);
+  stroke-width: 2.2;
+  opacity: 0.75;
+}
+
+.clock-pin {
+  fill: var(--gold-core);
+}
+
+.clock-hour, .clock-minute {
+  stroke: var(--gold-core);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transform-origin: 32px 32px;
+  transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.clock-box.settled .clock-hour {
+  transform: rotate(210deg);
+}
+
+.clock-box.settled .clock-minute {
+  transform: rotate(180deg);
+}
+
+.clock-box.settled .clock-rim {
+  stroke: var(--gold-core);
+  filter: drop-shadow(0 0 8px var(--gold-warm));
+}
+
+/* Moon Details */
+.moon-shape {
+  fill: rgba(243, 201, 126, 0.25);
+  stroke: var(--gold-warm);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  transition: fill 0.8s ease, stroke 0.8s ease, filter 0.8s ease;
+}
+
+.moon-box.ready .moon-shape {
+  fill: var(--gold-warm);
+  stroke: var(--gold-core);
+  filter: drop-shadow(0 0 10px var(--gold-warm));
+}
+
+.ritual-star-spark {
+  fill: var(--gold-core);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.ritual-btn.completed .ritual-star-spark {
+  opacity: 1;
+}
+
+/* Morning Envelope */
+.morning-envelope-btn {
+  position: absolute;
+  bottom: 24px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  outline: none;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.morning-envelope-btn:hover, .morning-envelope-btn:focus-visible {
+  transform: scale(1.08);
+}
+
+.envelope-halo {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(243, 201, 126, 0.25) 0%, transparent 70%);
+  animation: envelopeGlow 3.6s ease-in-out infinite;
+}
+
+@keyframes envelopeGlow {
+  0%, 100% { transform: scale(0.9); opacity: 0.4; }
+  50% { transform: scale(1.25); opacity: 0.85; }
+}
+
+.envelope-svg {
+  width: 36px;
+  height: 28px;
+  overflow: visible;
+  position: relative;
+  z-index: 2;
+}
+
+.env-body {
+  fill: #141A2D;
+  stroke: var(--gold-warm);
+  stroke-width: 1.6;
+}
+
+.env-fold {
+  fill: none;
+  stroke: var(--gold-warm);
+  stroke-width: 1.4;
+}
+
+.env-seal {
+  fill: var(--gold-core);
+  filter: drop-shadow(0 0 6px var(--gold-warm));
+}
+
+/* Envelope Gentle Shake when Locked */
+.morning-envelope-btn.shake {
+  animation: envShake 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes envShake {
+  10%, 90% { transform: translate3d(-1.5px, 0, 0); }
+  20%, 80% { transform: translate3d(2.5px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-2.5px, 0, 0); }
+  40%, 60% { transform: translate3d(2.5px, 0, 0); }
+}
+
+/* Morning Card Modal Overlay */
+.morning-card-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 6, 12, 0.92);
+  backdrop-filter: blur(14px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.8s ease;
+}
+
+.morning-card-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.morning-card {
+  width: 100%;
+  max-width: 440px;
+  background: #0E1324;
+  border: 1px solid rgba(243, 201, 126, 0.35);
+  border-radius: 16px;
+  padding: 38px 26px 32px 26px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(243, 201, 126, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateY(20px) scale(0.96);
+  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.morning-card-overlay.active .morning-card {
+  transform: translateY(0) scale(1);
+}
+
+.close-card-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  outline: none;
+  transition: color 0.3s ease;
+}
+
+.close-card-btn:hover {
+  color: var(--gold-core);
+}
+
+.close-card-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.morning-bismillah {
+  font-size: 1.8rem;
+  margin-bottom: 22px;
+  color: var(--gold-core);
+}
+
+.morning-verse-item {
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.morning-arabic {
+  font-size: 1.45rem;
+  line-height: 2.2;
+}
+
+.morning-trans {
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+.morning-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.morning-warm-light {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #FFF7DF;
+  box-shadow: 0 0 20px var(--gold-warm);
+  margin-bottom: 14px;
+}
+
+.morning-sig {
+  font-family: var(--font-latin);
+  font-size: 1.35rem;
+  letter-spacing: 0.08em;
+  color: var(--gold-warm);
+  font-style: italic;
+}
+
+/* Sleep Mode Overlay */
+.sleep-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #040508;
+  z-index: 90;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 4.8s cubic-bezier(0.22, 1, 0.36, 1), visibility 4.8s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sleep-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.sleep-sky-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.sleep-word {
+  font-family: var(--font-latin);
+  font-size: 2.6rem;
+  letter-spacing: 0.16em;
+  color: var(--gold-core);
+  text-shadow: 0 0 35px var(--gold-warm);
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 2.2s ease, transform 2.2s ease;
+}
+
+.sleep-word.visible {
+  opacity: 0.92;
+  transform: scale(1);
+}
+
+/* ==============================================
+   RESPONSIVE ADJUSTMENTS (Mobile First & Desktop)
+   ============================================== */
+@media (min-width: 600px) {
+  .subject-name {
+    font-size: 3.5rem;
+  }
+  .polaroid-gallery {
+    gap: 20px;
+  }
+  .polaroid-frame {
+    width: 145px;
+    height: 195px;
+  }
+  .polaroid-img {
+    height: 155px;
+  }
+  .arabic-line {
+    font-size: 1.7rem;
+  }
+  .translation-line {
+    font-size: 1.05rem;
+  }
+}
+
+/* ==============================================
+   PREFERS REDUCED MOTION
+   ============================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.3s !important;
+  }
+  .polaroid-item {
+    animation: none !important;
+  }
+  .charge-aura.breathing {
+    animation: none !important;
+    opacity: 0.5 !important;
+    transform: scale(1) !important;
+  }
+  .pulse-ring-outer, .pulse-ring-middle, .pulse-ring-core {
+    animation: none !important;
+    opacity: 0.6 !important;
+  }
+  .floating-ember {
+    animation: none !important;
+  }
+}
